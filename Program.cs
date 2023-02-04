@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.CommandLine.NamingConventionBinder;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -17,7 +18,7 @@ namespace BingDailyImagesDl
 	{
 		private const string BaseUrl = "https://www.bing.com";
 		private const string ImageMetadataUrl = "HPImageArchive.aspx?format=js&idx=0&n=8&mkt=en-CA"; // n indicates how many image metadatas to fetch. 8 is max.
-		
+		 
 		private static readonly string[] ImgMimes = {
 			"image/apng",
 			"image/bmp",
@@ -36,8 +37,8 @@ namespace BingDailyImagesDl
 		{
             var option = new Option<string>("--savedir", "The directory to save downloaded images to.")
 			{
-				Name = "savedir",
-				Required = true
+				Name = "savedir", 
+				IsRequired = true
 			};
 			option.AddAlias("-s");
 
@@ -54,7 +55,7 @@ namespace BingDailyImagesDl
 			}
 			catch (Exception ex)
 			{
-				File.WriteAllText(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "bing-error.txt"), ex.ToString());
+				LogException(ex);
 			}
 		}
 
@@ -96,6 +97,10 @@ namespace BingDailyImagesDl
 					cache.Add(id);
 				}
 			}
+			catch (Exception ex)
+			{
+				LogException(ex);
+			}
 			finally
 			{
 				cache.Flush();
@@ -119,6 +124,14 @@ namespace BingDailyImagesDl
 			client.DefaultRequestHeaders.Accept.Clear();
 			client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 			return client;
+		}
+
+		private static void LogException(Exception ex)
+		{
+			File.WriteAllText(
+				Path.Combine(
+					Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), $"err-{DateTime.UtcNow.Ticks}.txt"), 
+					ex.ToString());
 		}
 
 		public class RootObject
